@@ -1,6 +1,11 @@
 name: Observability Stress Test
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # <--- ESTA ES LA LÍNEA MÁGICA
 
 jobs:
   test:
@@ -10,7 +15,6 @@ jobs:
 
       - name: Build and Start Stack
         run: |
-          # Forzamos el build para asegurar que los cambios del Nivel 1 y 2 estén presentes
           docker-compose up -d --build
 
       - name: Set up Python
@@ -24,20 +28,15 @@ jobs:
 
       - name: Wait for Services (30s)
         run: |
-          # Esperamos a que el healthcheck de las apps y Prometheus esté listo
           sleep 30
 
       - name: Run Intelligent Stress Test (Locust)
         run: |
-          # Ejecutamos Locust sin interfaz (headless) por 60 segundos
-          # Esto generará tráfico en /, /io_task, /error_test, etc.
           locust -f locustfile.py --headless -u 10 -r 2 --run-time 60s -H http://localhost:8000
 
       - name: Verify Observability Endpoints
         run: |
-          # Verificamos que Prometheus esté exponiendo métricas de la App-A
           curl -s http://localhost:8000/metrics | grep "fastapi_requests_total"
-          # Verificamos que Loki esté respondiendo
           curl -s http://localhost:3100/ready
 
       - name: Inspect Logs for Correlated Traces
