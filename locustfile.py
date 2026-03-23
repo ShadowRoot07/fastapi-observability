@@ -1,6 +1,4 @@
-# Usage: locust -f locustfile.py --headless --users 10 --spawn-rate 1 -H http://localhost:8000
 from locust import HttpUser, task, between
-
 
 class QuickstartUser(HttpUser):
     wait_time = between(1, 5)
@@ -19,7 +17,7 @@ class QuickstartUser(HttpUser):
 
     @task(3)
     def random_sleep(self):
-        self.client.get("/random_sleep", name="/random_sleep")    
+        self.client.get("/random_sleep", name="/random_sleep")
 
     @task(10)
     def random_status(self):
@@ -29,6 +27,7 @@ class QuickstartUser(HttpUser):
     def chain(self):
         self.client.get("/chain", name="/chain")
 
-    @task()
-    def random_sleep(self):
-        self.client.get("/error_test", name="/error_test") 
+    @task(2) # FIX: Nombre cambiado para evitar el "Shadowing"
+    def error_test_task(self):
+        self.client.get("/error_test", name="/error_test")
+

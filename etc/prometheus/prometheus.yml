@@ -1,52 +1,28 @@
 global:
-  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
-  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
-  # scrape_timeout is set to the global default (10s).
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
-# Alertmanager configuration
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # - alertmanager:9093
-
-# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
-rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
-
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: "prometheus"
-
-    # metrics_path defaults to '/metrics'
-    # scheme defaults to 'http'.
-
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: 'app-a'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
+  # Agrupamos las apps para una gestión de etiquetas más limpia
+  - job_name: "fastapi-apps"
     scrape_interval: 5s
-
+    # Habilitamos el almacenamiento de ejemplares para saltar de métrica a traza
+    enable_protobuf_negotiation: true 
     static_configs:
-      - targets: ['app-a:8000']
+      - targets: ["app-a:8000", "app-b:8000", "app-c:8000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: "instance"
+      - source_labels: [__address__]
+        regex: "app-(.*):8000"
+        target_label: "app_name"
+        replacement: "app-$1"
 
-  - job_name: 'app-b'
+storage:
+  tsdb:
+    out_of_order_time_window: 1m
 
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
-
-    static_configs:
-      - targets: ['app-b:8000']
-
-  - job_name: 'app-c'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
-
-    static_configs:
-      - targets: ['app-c:8000']
