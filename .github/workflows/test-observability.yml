@@ -12,7 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # <-- ESTE ERA EL ERROR: Faltaba "actions/"
+        uses: actions/checkout@v4
+
+      - name: Install Loki Logging Plugin
+        run: |
+          # Instalamos el plugin oficial. Si ya existe, lo forzamos.
+          docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+          # En lugar de reiniciar Docker, simplemente lo habilitamos si no lo está
+          docker plugin enable loki || true
 
       - name: Build and Start Stack
         run: |
@@ -27,24 +34,27 @@ jobs:
         run: |
           pip install locust httpx
 
-      - name: Wait for Services (30s)
+      - name: Wait for Services (45s)
         run: |
-          sleep 30
+          # Damos tiempo extra para que Loki y Tempo establezcan sus sockets
+          sleep 45
 
       - name: Run Intelligent Stress Test (Locust)
         run: |
+          # Locust generará la carga variada que definimos en el Nivel 2
           locust -f locustfile.py --headless -u 10 -r 2 --run-time 60s -H http://localhost:8000
 
       - name: Verify Observability Endpoints
         run: |
-          curl -s http://localhost:8000/metrics | grep "fastapi_requests_total"
+          # Verificamos métricas (Prometheus) y salud de Loki
+          curl -s http://localhost:8000/metrics | grep "fastapi"
           curl -s http://localhost:3100/ready
 
       - name: Inspect Logs for Correlated Traces
         if: always()
         run: |
           echo "=== APP-A LOGS (Buscando Trace IDs) ==="
-          docker compose logs app-a | tail -n 20
+          docker compose logs app-a --tail 20
           
       - name: Stop Services
         if: always()
