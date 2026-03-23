@@ -5,17 +5,18 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # <--- ESTA ES LA LÍNEA MÁGICA
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: checkout@v4 # Nota: checkout@v4 es correcto, el aviso de Node.js 20 es solo un warning de deprecación futura.
 
       - name: Build and Start Stack
         run: |
-          docker-compose up -d --build
+          # Cambiamos 'docker compose' por 'docker compose'
+          docker compose up -d --build
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,9 +44,10 @@ jobs:
         if: always()
         run: |
           echo "=== APP-A LOGS (Buscando Trace IDs) ==="
-          docker-compose logs app-a | tail -n 20
+          docker compose logs app-a | tail -n 20
           
       - name: Stop Services
         if: always()
-        run: docker-compose down
+        run: |
+          docker compose down
 
