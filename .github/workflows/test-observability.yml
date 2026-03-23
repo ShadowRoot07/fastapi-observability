@@ -11,11 +11,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: checkout@v4 # Nota: checkout@v4 es correcto, el aviso de Node.js 20 es solo un warning de deprecación futura.
+      - name: Checkout Code
+        uses: actions/checkout@v4 # <-- ESTE ERA EL ERROR: Faltaba "actions/"
 
       - name: Build and Start Stack
         run: |
-          # Cambiamos 'docker compose' por 'docker compose'
           docker compose up -d --build
 
       - name: Set up Python
